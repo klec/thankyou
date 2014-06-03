@@ -4,14 +4,20 @@ import (
 	"net/http"
 	"html/template"
 	"fmt"
+	"labix.org/v2/mgo"
+	"bufio"
+	"os"
+	"strings"
+	"labix.org/v2/mgo/bson"
 )
 
 
 func main() {
 	var app = new(App)
-	app.init()
+	//app.init()
 	http.Handle("/static/", http.FileServer(http.Dir("./")))
-	http.HandleFunc("/", app.handll)
+//	http.HandleFunc("/addpers", app.addPersonal)
+	http.HandleFunc("/index.html", app.handll)
 	http.ListenAndServe(":8080",nil)
 }
 
@@ -20,21 +26,99 @@ type App struct {
 	layout *template.Template
 }
 
-	func (ap *App)init() {
+type Person struct {
+	ID        int
+	Name      string
+	Email     string
+}
+
+type Template struct {
+	Body string
+	Level int
+}
+
+type Page struct {
+	Best1, Best2, Best3	string
+	Loosers			map[int]string
+}
+
+func (p *Page)init() {
+	connection:=GetMongoConnection()
+
+
+	pipeline:=[]bson.M{
+		bson.M{"$group":
+			bson.M{
+				"_id": "$level",
+				"summ":	bson.M{"$sum": 1,},
+			},
+		},
+		bson.M{"$sort":
+			bson.M{ "summ": -1},
+		},
+
 	}
 
-	func (a *App) handll(writer http.ResponseWriter, request *http.Request) {
-		if (request.Method == "POST") {
-
-		}
-		a.render(writer)
+	query := bson.D{
+		{"aggregate","templates"},
+		{"pipeline", pipeline},
 	}
 
-	func (a *App)render(writer http.ResponseWriter) {
-		layout, err := template.ParseFiles("answer.html")
-		if (err != nil) {fmt.Println(err)}
-		a.layout = layout
-		a.layout.ExecuteTemplate(writer, "answer", nil)
+	answer := struct {
+		Result []map[string] int
+		Ok     bool
+	}{}
+
+	err := connection.Run(query, &answer)
+	if nil!=err {
+		fmt.Println( err)
+	}
+	for row:= range answer.Result {
+		fmt.Println(answer.Result[row])
+
 	}
 
+}
 
+func (a *App) handll(writer http.ResponseWriter, request *http.Request) {
+	if (request.Method == "POST") {
+
+	}
+	a.render(writer)
+}
+
+func (a *App)render(writer http.ResponseWriter) {
+	layout, err := template.ParseFiles("answer.html")
+	if (err != nil) {fmt.Println(err)}
+	a.layout = layout
+	page := &Page{"первый","второй","третий", nil}
+	page.init();
+	err = a.layout.ExecuteTemplate(writer, "answer", page)
+	if nil!=err {fmt.Println( err)}
+}
+
+func (a *App)addPersonal(writer http.ResponseWriter, request *http.Request){
+	connection:=GetMongoConnection()
+	fmt.Println(connection)
+
+	file, _ := os.Open("personal.html")
+	scanner := bufio.NewScanner(file)
+	i :=0
+	for scanner.Scan() {
+		i++;
+		row:=scanner.Text()
+		roww := strings.Split(row, "\t")
+		p:=&Person{ID: i, Name: roww[0], Email: roww[1]}
+		//connection.C("persons").Insert(p)
+		fmt.Println(p)
+	}
+}
+
+
+func GetMongoConnection() *mgo.Database {
+	connection, err := mgo.Dial("localhost")
+	if(err!=nil){fmt.Println(err)}
+	db := connection.DB("thanks")
+
+	return db;
+}
