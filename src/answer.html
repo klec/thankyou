@@ -5,11 +5,13 @@
     <meta charset="UTF-8">
     <title>Thank you guys!!!</title>
     <link href="/static/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <script src="/static/js/jquery-2.1.1.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
 </head>
 <body>
 <div class="container">
     <div class="masthead">
-        <H1>Интерактивная доска почета</H1><HR>
+        <H1>Наше всё</H1><HR>
 
     </div>
 <H2>Три кита, на которых держится наша твердь:</H2>
@@ -42,14 +44,36 @@
     <li>Он помог</li>
     <li>Он помог</li>
 </ul>
-    <a class="btn btn-large btn-success" href="#">Поведать о подвиге</a>
+    <a class="btn btn-large btn-lg" href="#" data-toggle="modal" data-target="#myModal">Поведать о подвиге</a>
 </div>
-<script src="/static/js/bootstrap.min.js"></script>
-<form action="addthanks">
-    <select name="slave" id="slave">
-        {{.GetSlaves}}
-    </select>
-</form>
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form role="form" action="index.html" method="post">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="myModalLabel">И кто же у нас отличился?</h4>
+                </div>
+                <div class="modal-body">
+                        <div class="form-group">
+                            <select name="slave" id="slave" class="form-control">
+                                {{.GetSlaves}}
+                            </select> ,лично тебе помог тем что
+                        </div>
+                        <div class="form-group">
+                            <textarea class="form-control" name="action" rows="4" placeholder="Disabled input here..." ></textarea>
+                        </div>
+                        <input type="hidden" name="master" value="0">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <input type="submit" value="Save" class="btn btn-primary">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
 {{end}}

@@ -9,6 +9,8 @@ import (
 	"os"
 	"strings"
 	"labix.org/v2/mgo/bson"
+	"net"
+	"strconv"
 )
 
 
@@ -18,6 +20,7 @@ func main() {
 	http.Handle("/static/", http.FileServer(http.Dir("./")))
 //	http.HandleFunc("/addpers", app.addPersonal)
 	http.HandleFunc("/index.html", app.handll)
+	//http.Post("/addreview", app.addreview)
 	http.ListenAndServe(":8080",nil)
 }
 
@@ -30,6 +33,13 @@ type Person struct {
 	ID        int
 	Name      string
 	Email     string
+}
+
+type Review struct {
+	Slave		int
+	Action		string
+	Master		int
+	MasterIp 	net.IP
 }
 
 type Template struct {
@@ -82,9 +92,20 @@ func (p *Page)init() {
 
 func (a *App) handll(writer http.ResponseWriter, request *http.Request) {
 	if (request.Method == "POST") {
+		a.addReview(request)
+
 
 	}
 	a.render(writer)
+}
+
+func (a *App) addReview(request *http.Request){
+	slave, _  := strconv.Atoi(request.FormValue("slave"))
+	action := request.FormValue("action")
+	master, _ := strconv.Atoi(request.FormValue("master"))
+	connection:=GetMongoConnection()
+	review:=&Review{Slave:slave, Action:action, Master: master, MasterIp: net.IPv4(127,0,0,1)}
+	connection.C("reviews").Insert(review)
 }
 
 func (a *App)render(writer http.ResponseWriter) {
@@ -115,7 +136,7 @@ func (a *App)addPersonal(writer http.ResponseWriter, request *http.Request){
 }
 
 func (p *Page)GetSlaves() template.HTML{
-	html := template.HTML("<option>Имя нашего героя</option>")
+	html := "<option>Имя нашего героя</option>"
 	connection:=GetMongoConnection()
 	res:=[]Person{}
 	iter := connection.C("persons").Find(nil).Iter()
@@ -124,10 +145,10 @@ func (p *Page)GetSlaves() template.HTML{
 	for i:=range res{
 		person := res[i]
 		//fmt.Println(person.Name)
-		html+=template.HTML("</option><option>"+person.Name)
+		html+="<option value="+strconv.Itoa(i)+">"+person.Name+"</option>"
 	}
 	html+="</option>"
-	return html
+	return template.HTML(html)
 }
 
 func GetMongoConnection() *mgo.Database {
