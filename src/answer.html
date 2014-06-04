@@ -31,20 +31,18 @@
         </div>
     </div>
     <HR>
-<H2>Их подвиг, конечно, тоже бессмертен, но чуть менее</H2>
+<H2>Ну и их подвиг, конечно, тоже бессмертен, но чуть менее</H2>
 <ul>
     <li>Например вот Он помог</li>
     <li>Еще вот Он помог</li>
     <li>Как то Он помог</li>
     <li>Однажды Он помог</li>
     <li>Было както что Он помог</li>
-    <li>Практически случайно Он помог</li>
-    <li>Он помог</li>
-    <li>Он помог</li>
-    <li>Он помог</li>
-    <li>Он помог</li>
 </ul>
-    <a class="btn btn-large btn-lg" href="#" data-toggle="modal" data-target="#myModal">Поведать о подвиге</a>
+    <div class="footer">
+        <a class="btn btn-large btn-lg" href="#" data-toggle="modal" data-target="#myModal">Поведать о подвиге</a>
+
+    </div>
 </div>
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -57,11 +55,11 @@
                 <div class="modal-body">
                         <div class="form-group">
                             <select name="slave" id="slave" class="form-control">
-                                {{.GetSlaves}}
-                            </select> ,лично тебе помог тем что
+                                {{.SlavesOptions}}
+                            </select> ,лично мне помог тем что
                         </div>
                         <div class="form-group">
-                            <textarea class="form-control" name="action" rows="4" placeholder="Disabled input here..." ></textarea>
+                            <textarea class="form-control" name="action" rows="4" placeholder="не мешал работать" ></textarea>
                         </div>
                         <input type="hidden" name="master" value="0">
                 </div>
