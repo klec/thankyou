@@ -45,6 +45,11 @@
     <a class="btn btn-large btn-success" href="#">Поведать о подвиге</a>
 </div>
 <script src="/static/js/bootstrap.min.js"></script>
+<form action="addthanks">
+    <select name="slave" id="slave">
+        {{.GetSlaves}}
+    </select>
+</form>
 </body>
 </html>
 {{end}}

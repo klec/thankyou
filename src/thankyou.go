@@ -114,6 +114,21 @@ func (a *App)addPersonal(writer http.ResponseWriter, request *http.Request){
 	}
 }
 
+func (p *Page)GetSlaves() template.HTML{
+	html := template.HTML("<option>Имя нашего героя</option>")
+	connection:=GetMongoConnection()
+	res:=[]Person{}
+	iter := connection.C("persons").Find(nil).Iter()
+	err:=iter.All(&res)
+	if(err!=nil){fmt.Println(err)}
+	for i:=range res{
+		person := res[i]
+		//fmt.Println(person.Name)
+		html+=template.HTML("</option><option>"+person.Name)
+	}
+	html+="</option>"
+	return html
+}
 
 func GetMongoConnection() *mgo.Database {
 	connection, err := mgo.Dial("localhost")
