@@ -11,6 +11,7 @@ import (
 	"labix.org/v2/mgo/bson"
 	"strconv"
 	"net/smtp"
+	"time"
 )
 
 
@@ -38,7 +39,7 @@ type Review struct {
 	Action		string
 	Master		int
 	MasterIp 	string
-	Time		string
+	Time		time.Time
 }
 
 type Template struct {
@@ -58,14 +59,14 @@ func (a *Application)getReviews() [8]string {
 		{"aggregate","reviews"},
 		{"pipeline", []bson.M{
 			bson.M{"$sort":
-				bson.M{ "action": -1},
+				bson.M{ "_id": 1},
 			},
 
 			bson.M{"$group":
 				bson.M{	"_id": "$slave",
 					"summ":	bson.M{"$sum": 1},
 					"slave": bson.M{"$first":"$slave"},
-					"action":bson.M{"$first":"$action"},
+					"action":bson.M{"$last":"$action"},
 	//				"masterip":bson.M{"$first":"$masterip"},
 				},
 			},
@@ -104,6 +105,8 @@ func (a *Application)getReviews() [8]string {
 func (a *Application) handll(writer http.ResponseWriter, request *http.Request) {
 	if (request.Method == "POST") {
 		a.addReview(request)
+		request.Method="GET"
+		http.Redirect(writer, request, "/index.html", http.StatusFound)
 	}
 	loosers:=a.getReviews()
 
@@ -116,8 +119,8 @@ func (a *Application) addReview(request *http.Request){
 	slaveId, _  := strconv.Atoi(request.FormValue("slave"))
 	action := request.FormValue("action")
 	master, _ := strconv.Atoi(request.FormValue("master"))
-	review:=&Review{Slave:slaveId, Action:action, Master: master, MasterIp: request.RemoteAddr}
-	a.DbSource.C("reviews").Insert(review) //@todo add creation time
+	review:=&Review{Slave:slaveId, Action:action, Master: master, MasterIp: request.RemoteAddr,Time:time.Now()}
+	a.DbSource.C("reviews").Insert(review)
 	slave :=a.GetPerson(slaveId)
 	a.sendEmail(slave.Email, action)
 }
@@ -154,7 +157,7 @@ func (a *Application)sendEmail(address string, action string){
 	subject := "Subject: О тебе кто то отзыв оставил\n"
 	message := "<html><body>Кто то накапал что ты "+action+". <br>\nМожешь не обращать внимание," +
 	"а можешь оставить <a href=\"http://klec.od:8080/index.html\">здесь</a> ответный отзыв или просто упомянуть кого то, кто тебе помогал на днях.<br>\n"+
-	"Глядишь ему на том свете зачтется...</body></html>"
+	"Глядишь ему на том свете зачтется... Ну или при выдаче ЗП.</body></html>"
 	err := smtp.SendMail(
 		"smtp.gmail.com:25",
 		auth,
@@ -176,7 +179,7 @@ func (a *Application)GetPerson(id int) Person{
 	return p
 }
 func (a *Application)GetTemplate(id int, ne []string) string{
-	res:=[]Template{}
+	res:=[]Template{} //@todo move source to files
 	iter := a.DbSource.C("templates").Find(bson.M{"level":id, "body":bson.M{"$nin":ne}})
 	err:=iter.All(&res) //@todo add sort random
 	if(err!=nil){fmt.Println(err)}
