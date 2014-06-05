@@ -10,16 +10,16 @@ import (
 	"strings"
 	"labix.org/v2/mgo/bson"
 	"strconv"
+	"net/smtp"
 )
 
 
 func main() {
 	var App = new(Application)
-	App.GetMongoConnection() //@todo
+	App.GetMongoConnection()
 	http.Handle("/static/", http.FileServer(http.Dir("./")))
-	//http.HandleFunc("/addpers", app.addPersonal)
+	//http.HandleFunc("/addpers", App.addPersonal)
 	http.HandleFunc("/index.html", App.handll)
-	//http.Post("/addreview", app.addreview)
 	http.ListenAndServe(":8080",nil)
 }
 
@@ -58,7 +58,7 @@ func (a *Application)getReviews() [8]string {
 		{"aggregate","reviews"},
 		{"pipeline", []bson.M{
 			bson.M{"$sort":
-				bson.M{ "action": 1},
+				bson.M{ "action": -1},
 			},
 
 			bson.M{"$group":
@@ -92,8 +92,8 @@ func (a *Application)getReviews() [8]string {
 
 		template := a.GetTemplate(answer.Result[row]["summ"].(int), lastTemplate)
 		lastTemplate = append(lastTemplate, template)
-		person := a.GetSlave(answer.Result[row]["slave"].(int))
-		oneReview:= strings.Replace(template, "Он", person, -1)
+		person := a.GetPerson(answer.Result[row]["slave"].(int))
+		oneReview:= strings.Replace(template, "Он", person.Name, -1)
 		oneReview = strings.Replace(oneReview, "Помог", action, -1)
 
 		Reviews[row]=oneReview
@@ -113,16 +113,19 @@ func (a *Application) handll(writer http.ResponseWriter, request *http.Request) 
 }
 
 func (a *Application) addReview(request *http.Request){
-	slave, _  := strconv.Atoi(request.FormValue("slave"))
+	slaveId, _  := strconv.Atoi(request.FormValue("slave"))
 	action := request.FormValue("action")
 	master, _ := strconv.Atoi(request.FormValue("master"))
-	review:=&Review{Slave:slave, Action:action, Master: master, MasterIp: request.RemoteAddr}
+	review:=&Review{Slave:slaveId, Action:action, Master: master, MasterIp: request.RemoteAddr}
 	a.DbSource.C("reviews").Insert(review) //@todo add creation time
-	//@todo add slave notification
-
+	slave :=a.GetPerson(slaveId)
+	a.sendEmail(slave.Email, action)
 }
 
 
+/**
+ *  add new personal to db from file personal.html
+ */
 func (a *Application) addPersonal(writer http.ResponseWriter, request *http.Request){
 	file, _ := os.Open("personal.html")
 	scanner := bufio.NewScanner(file)
@@ -137,20 +140,52 @@ func (a *Application) addPersonal(writer http.ResponseWriter, request *http.Requ
 	}
 }
 
-func (a *Application)GetSlave(id int) string{
+func (a *Application)sendEmail(address string, action string){
+	auth := smtp.PlainAuth(
+		"",
+		"klec@speroteck.com",
+		"Ryurik13",
+		"smtp.gmail.com",
+	)
+	// Connect to the server, authenticate, set the sender and recipient,
+	// and send the email all in one step.
+		fmt.Println("sending email")
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n";
+	subject := "Subject: О тебе кто то отзыв оставил\n"
+	message := "<html><body>Кто то накапал что ты "+action+". <br>\nМожешь не обращать внимание," +
+	"а можешь оставить <a href=\"http://klec.od:8080/index.html\">здесь</a> ответный отзыв или просто упомянуть кого то, кто тебе помогал на днях.<br>\n"+
+	"Глядишь ему на том свете зачтется...</body></html>"
+	err := smtp.SendMail(
+		"smtp.gmail.com:25",
+		auth,
+		"noreply@speroteck.com",
+		[]string{address},
+		[]byte(subject+mime+message),
+	)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func (a *Application)GetPerson(id int) Person{
 	res:=[]Person{}
 	iter := a.DbSource.C("persons").Find(bson.M{"id":id})
 	err:=iter.All(&res)
 	if(err!=nil){fmt.Println(err)}
 	p:=res[0]
-	return p.Name
+	return p
 }
 func (a *Application)GetTemplate(id int, ne []string) string{
 	res:=[]Template{}
 	iter := a.DbSource.C("templates").Find(bson.M{"level":id, "body":bson.M{"$nin":ne}})
-	err:=iter.All(&res)
+	err:=iter.All(&res) //@todo add sort random
 	if(err!=nil){fmt.Println(err)}
-	t:=res[0]
+	var t = Template{}
+	if(len(res)>0){
+		t=res[0]
+	}else{
+		t=Template{Body:"Он запросто Помог"}
+	}
 	return t.Body
 }
 
