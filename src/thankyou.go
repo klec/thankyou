@@ -192,19 +192,6 @@ func (a *Application)GetTemplate(id int, ne []string) string{
 	return t.Body
 }
 
-func (a *Application)GetSlaves() template.HTML{
-	html := "<option>Имя нашего героя</option>"
-	res:=[]Person{}
-	iter := a.DbSource.C("persons").Find(nil).Sort("id").Iter()
-	err:=iter.All(&res)
-	if(err!=nil){fmt.Println(err)}
-	for i:=range res{
-		person := res[i]
-		html+="<option value=\""+strconv.Itoa(person.ID)+"\" >"+person.Name+"</option>"
-	}
-	return template.HTML(html)
-}
-
 func (p *Page)GetLoosers() template.HTML{
 	html:=""
 	for i:=range p.Loosers{

@@ -1,4 +1,3 @@
-{{define "answer"}}
 <!DOCTYPE html>
 <html>
 <head lang="en">
@@ -11,34 +10,36 @@
 <body>
 <div class="container">
     <div class="masthead">
-        <H1>Благодарим тех, кто оказывает помощь</H1><HR>
+        <H1>
+            <a class="btn btn-large btn-lg pull-right" href="#" data-toggle="modal" data-target="#myModal">Поблагодарить</a>
+            Благодарим за помощь
 
+        </H1>
     </div>
 <H2>Наиболее ценные события:</H2>
 
     <div class="row">
         <div class="span4">
-            <b>{{.Best1}}</b>
+            <b><?php echo $page["Best1"] ?></b>
         </div>
         <div class="span4">
-            <b>{{.Best2}}</b>
+            <b><?php echo $page["Best2"] ?></b>
         </div>
         <div class="span4">
-            <b>{{.Best3}}</b>
+            <b><?php echo $page["Best3"] ?></b>
         </div>
     </div>
     <HR>
 <H3>Ну и их подвиг, конечно, тоже бессмертен, но чуть менее</H3>
 <ul>
-    {{.GetLoosers}}
+    <?php echo $page["others"];?>
 </ul>
     <div class="footer">
-        <a class="btn btn-large btn-lg" href="#" data-toggle="modal" data-target="#myModal">Поведать о подвиге</a>
 
     </div>
 </div>
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog" style="width: 300px;">
         <div class="modal-content">
             <form role="form" action="index.html" method="post">
                 <div class="modal-header">
@@ -48,8 +49,8 @@
                 <div class="modal-body">
                         <div class="form-group">
                             <select name="slave" id="slave" class="form-control">
-                                {{.SlavesOptions}}
-                            </select> ,лично мне помог тем что
+                                <?php echo slavesOptions($db); ?>
+                            </select> <br />,лично мне помог тем что
                         </div>
                         <div class="form-group">
                             <textarea class="form-control" name="action" rows="4" placeholder="не мешал работать" ></textarea>
@@ -67,4 +68,3 @@
 
 </body>
 </html>
-{{end}}
