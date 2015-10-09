@@ -9,7 +9,7 @@
 function prepareReviews($db){
     $html="";
     $page = array();
-    $reviews = $db->query("select * from `reviews`", MYSQLI_ASSOC);
+    $reviews = $db->query("select * from `reviews` LEFT JOIN `persons` on `persons`.`id`=`reviews`.`slave_id`", MYSQLI_ASSOC);
     foreach($reviews->fetch_all() as $key=>$review){
         $renderedReview = renderReview($review);
         if($key>2){
@@ -24,7 +24,7 @@ function prepareReviews($db){
 }
 
 function renderReview($review){
-    return $review[1]." ".$review[3];
+    return $review[6]." ".$review[3];
 }
 
 function slavesOptions($db){
